@@ -1,28 +1,80 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session, url_for
 import requests
 from pymongo import MongoClient
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "default_secret")
 
 mongo_uri = os.getenv("MONGO_URI")
 client = MongoClient(mongo_uri)
-db = client.dream_journal
-dreams_collection = db.dreams
+db = client["mydatabase"]
+users = db["users"]
+dreams = db["dreams"]
 
 AI_SERVICE_URL = "http://ai_backend:6000/interpret"
 
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return redirect(url_for('login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        if users.find_one({"username": username}):
+            return "Username already exists."
+
+        hashed_pw = generate_password_hash(password)
+        users.insert_one({"username": username, "password": hashed_pw})
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = users.find_one({"username": username})
+        if user and check_password_hash(user['password'], password):
+            session['username'] = username
+            return redirect(url_for('dashboard'))
+
+        return "Invalid credentials."
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect(url_for('login'))
+
+@app.route('/dashboard')
+def dashboard():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html', username=session['username'])
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    dream_text = request.form['dream']
-    dreams_collection.insert_one({"text": dream_text})
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    dream_text = request.form.get('dream', '')
+    username = session['username']
+
+    if not dream_text.strip():
+        return "Please enter a dream."
+
+    dreams.insert_one({"username": username, "text": dream_text})
 
     try:
-        res = requests.post(AI_SERVICE_URL, json={"dream": dream_text})
+        res = requests.post("http://ai_backend:6000/interpret", json={"dream": dream_text})
         data = res.json()
         interpretation = data.get("interpretation", "No interpretation found.")
     except Exception as e:
@@ -32,8 +84,14 @@ def analyze():
 
 @app.route('/entries')
 def entries():
-    all_dreams = list(dreams_collection.find())
-    return render_template('entries.html', dreams=all_dreams)
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    username = session['username']
+    user_dreams = dreams.find({"username": username})
+
+    return render_template('entries.html', dreams=user_dreams, username=username)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)  
