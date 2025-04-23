@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dream Entries</title>
+    <title>Your Dream Entries</title>
 </head>
 <body>
-    <h1>All Dream Entries</h1>
+    <h1>Dream Entries for {{ username }}</h1>
     <ul>
         {% for dream in dreams %}
             <li>{{ dream.text }}</li>
         {% endfor %}
     </ul>
-    <a href="/">Back</a>
+    <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
 </body>
 </html>

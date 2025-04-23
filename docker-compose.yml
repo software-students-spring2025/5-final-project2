@@ -8,6 +8,8 @@ services:
     depends_on:
       - ai_backend
       - mongo
+    env_file:
+      - .env
     volumes:
       - ./frontend:/app
     environment:
