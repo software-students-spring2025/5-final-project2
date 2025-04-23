@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:5000"
+    depends_on:
+      - ai_backend
+      - mongo
+    volumes:
+      - ./frontend:/app
+    environment:
+      - MONGO_URI=${MONGO_URI}
+
+  ai_backend:
+    build: ./ai_backend
+    ports:
+      - "6000:6000"
+    volumes:
+      - ./ai_backend:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
