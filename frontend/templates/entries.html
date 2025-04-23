@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dream Entries</title>
+</head>
+<body>
+    <h1>All Dream Entries</h1>
+    <ul>
+        {% for dream in dreams %}
+            <li>{{ dream.text }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back</a>
+</body>
+</html>
