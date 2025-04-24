@@ -1,0 +1,78 @@
+name: AI Backend CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'ai_backend/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'ai_backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          cd ai_backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          
+      - name: Run tests with coverage
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd ai_backend
+          pytest --cov=. --cov-report=xml
+          
+      - name: Check coverage threshold
+        run: |
+          cd ai_backend
+          coverage_percentage=$(pytest --cov=. | grep TOTAL | awk '{print $4}' | sed 's/%//')
+          if (( $(echo "$coverage_percentage < 80" | bc -l) )); then
+            echo "Code coverage is below 80%. Current coverage: $coverage_percentage%"
+            exit 1
+          fi
+
+  build_and_deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }} # needs to be set in secrets
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} # needs to be set in secrets
+          
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./ai_backend
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest # needs to be set in secrets
+          build-args: |
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} 
+          
+      - name: Deploy to Digital Ocean
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DIGITALOCEAN_HOST }} # needs to be set in secrets
+          username: ${{ secrets.DIGITALOCEAN_USERNAME }} # needs to be set in secrets
+          key: ${{ secrets.DIGITALOCEAN_SSH_KEY }} # needs to be set in secrets
+          script: |
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest
+            docker stop ai-backend-container || true
+            docker rm ai-backend-container || true
+            docker run -d --name ai-backend-container -p 5000:5000 -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest
