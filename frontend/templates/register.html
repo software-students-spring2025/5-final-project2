@@ -11,6 +11,12 @@
       <div class = "col-md-4 mt-5 align-self-start">
         <form method="POST" class="bg-white p-4 rounded shadow-lg">
           <h2 class="mb-4 text-center">Register</h2>
+          {% if error and error.strip() %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ error }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endif %}
           <div class="mb-3">
             <input type="text" name="username" class="form-control" placeholder="Username" required>
           </div>
