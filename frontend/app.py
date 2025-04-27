@@ -97,5 +97,9 @@ def entries():
     return render_template('entries.html', dreams=user_dreams, username=username)
 
 
+@app.route('/export')
+def export():
+    return 0
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)  
