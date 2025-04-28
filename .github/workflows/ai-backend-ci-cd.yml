@@ -61,7 +61,9 @@ jobs:
         with:
           context: ./ai_backend
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest # needs to be set in secrets
+          tags: | 
+            ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:${{ github.sha }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest # needs to be set in secrets
           build-args: |
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} 
           
