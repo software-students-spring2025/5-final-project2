@@ -27,7 +27,7 @@ def interpret_dream(username, message):
         "content": (
             "You are a dream interpreter with deep knowledge of astrology, symbolism, "
             "and human psychology. Each time the user submits a dream, you should "
-            "provide a concise, actionable interpretation of that dream."
+            "provide a concise, actionable interpretation of that dream. Feel free to use the user's previous dreams to interpret the new one. "
         )
     }
 
@@ -57,6 +57,41 @@ def interpret_dream(username, message):
                 }
             }
         )
+
+        return interpretation
+
+    except Exception as e:
+        print("OpenAI API failed:", e)
+        traceback.print_exc()
+        return str(e)
+
+def get_dream_glance(username):
+    import traceback
+    try:
+        user = users.find_one({"username": username}) or {}
+        history = user.get("history", [])
+    except Exception as e:
+        print("MongoDB error loading history:", e)
+        traceback.print_exc()
+        history = []
+
+    system_prompt = {
+        "role": "system",
+        "content": (
+            "You are a dream interpreter with deep knowledge of astrology, symbolism, "
+            "and human psychology. Using all of the dreams available in your conversation with the user, give a summary of "
+            "the recurring symbols and feelings in their dreams and give some guidance regarding what it could mean in the life. "
+            "Prioritize more recent dreams in your analysis and if there has been a dramatic shift in dream patterns over time, "
+            "acknowledge that and note the user's growth or change. "
+        )
+    }
+
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages= [system_prompt] + history
+        )
+        interpretation = response.choices[0].message.content
 
         return interpretation
 
