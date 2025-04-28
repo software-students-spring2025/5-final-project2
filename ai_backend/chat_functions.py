@@ -14,6 +14,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def interpret_dream(username, message):
     import traceback
+
     try:
         user = users.find_one({"username": username}) or {}
         history = user.get("history", [])
@@ -27,22 +28,22 @@ def interpret_dream(username, message):
         "content": (
             "You are a dream interpreter with deep knowledge of astrology, symbolism, "
             "and human psychology. Each time the user submits a dream, you should "
-            "provide a concise, actionable interpretation of that dream. Feel free to use the user's previous dreams to interpret the new one. "
-        )
+            "provide a concise, actionable interpretation of that dream. Feel free to use the user's "
+            "previous dreams to interpret the new one. "
+        ),
     }
 
     messages = [system_prompt] + history + [{"role": "user", "content": message}]
 
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages
+            model="gpt-3.5-turbo", messages=messages
         )
         interpretation = response.choices[0].message.content
 
         new_turns = [
-            {"role": "user",      "content": message},
-            {"role": "assistant", "content": interpretation}
+            {"role": "user", "content": message},
+            {"role": "assistant", "content": interpretation},
         ]
         users.update_one(
             {"username": username},
@@ -52,10 +53,10 @@ def interpret_dream(username, message):
                     "dreams": {
                         "text": message,
                         "analysis": interpretation,
-                        "date": datetime.utcnow()
-                    }
+                        "date": datetime.utcnow(),
+                    },
                 }
-            }
+            },
         )
 
         return interpretation
@@ -65,8 +66,10 @@ def interpret_dream(username, message):
         traceback.print_exc()
         return str(e)
 
+
 def get_dream_glance(username):
     import traceback
+
     try:
         user = users.find_one({"username": username}) or {}
         history = user.get("history", [])
@@ -83,13 +86,12 @@ def get_dream_glance(username):
             "the recurring symbols and feelings in their dreams and give some guidance regarding what it could mean in the life. "
             "Prioritize more recent dreams in your analysis and if there has been a dramatic shift in dream patterns over time, "
             "acknowledge that and note the user's growth or change. "
-        )
+        ),
     }
 
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages= [system_prompt] + history
+            model="gpt-3.5-turbo", messages=[system_prompt] + history
         )
         interpretation = response.choices[0].message.content
 
