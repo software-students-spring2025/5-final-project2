@@ -12,7 +12,11 @@ on:
 
 jobs:
   test:
+    name: 🧪 Test & Coverage
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      MONGO_URI: ${{ secrets.MONGO_URI }} 
     steps:
       - uses: actions/checkout@v2
       
@@ -45,6 +49,7 @@ jobs:
           fi
 
   build_and_deploy:
+    name: 🚀 Build & Deploy
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -53,15 +58,17 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }} # needs to be set in secrets
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} # needs to be set in secrets
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} 
           
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
           context: ./ai_backend
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest # needs to be set in secrets
+          tags: | 
+            ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:${{ github.sha }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest
           build-args: |
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} 
           
