@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, session, url_for
 import requests
 from pymongo import MongoClient
@@ -62,27 +63,65 @@ def logout():
 def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session['username'])
+    
+    username = session['username']
+    user = users.find_one({"username": username}) or {}
+    dream_entries = user.get("dreams", [])
 
-@app.route('/analyze', methods=['POST'])
+    dream_dates = sorted({
+        entry.get("date").date() for entry in dream_entries if "date" in entry
+    }, reverse=True)
+
+    streak = 0
+    today = datetime.utcnow().date()
+
+    for i, day in enumerate(dream_dates):
+        expected_day = today - timedelta(days=i)
+        if day == expected_day:
+            streak += 1
+        else:
+            break
+
+
+    return render_template('index.html', username=username, streak=streak)
+
+@app.route('/analyze', methods=['GET','POST'])
 def analyze():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    dream_text = request.form.get('dream', '')
-    username = session['username']
+    interpretation = None
+    error = None
+    previous = ""
 
-    if not dream_text.strip():
-        return "Please enter a dream."
+    if request.method == "POST":
+        previous = request.form.get('dream', '').strip()
+        if not previous:
+            error = "Please enter a dream."
+        else:
+            try:
+                res = requests.post(
+                    AI_SERVICE_URL,
+                    json={"dream": previous, "username": session['username']}
+                )
+                data = res.json()
+                interpretation = (
+                    data.get("interpretation")
+                    or data.get("error")
+                    or "No interpretation found."
+                )
+            except Exception as e:
+                error = f"Error: {e}"
 
-    try:
-        res = requests.post("http://ai_backend:6000/interpret", json={"dream": dream_text, "username": username})
-        data = res.json()
-        interpretation = data.get("interpretation", "No interpretation found.")
-    except Exception as e:
-        interpretation = f"Error: {e}"
+    return render_template(
+        'analyze.html',
+        previous=previous,
+        interpretation=interpretation,
+        error=error
+    )
 
-    return render_template('result.html', interpretation=interpretation)
+
+
 
 @app.route('/entries')
 def entries():
@@ -90,9 +129,11 @@ def entries():
         return redirect(url_for('login'))
 
     username = session['username']
-    user_dreams = dreams.find({"username": username})
+    user = users.find_one({"username": username})
+    dreams = user.get("dreams", [])
+    dreams = sorted(dreams, key=lambda d: d.get("date", ""), reverse=True)
 
-    return render_template('entries.html', dreams=user_dreams, username=username)
+    return render_template('entries.html', username=username, dreams=dreams)
 
 
 @app.route('/export')
