@@ -12,6 +12,7 @@ on:
 
 jobs:
   test:
+    name: 🧪 Test & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -51,6 +52,7 @@ jobs:
           pytest --cov=. --cov-report=xml
 
   build_and_deploy:
+    name: 🚀 Build & Deploy
     needs: test
     runs-on: ubuntu-latest
     steps:
