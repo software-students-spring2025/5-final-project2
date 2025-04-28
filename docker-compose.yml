@@ -23,6 +23,7 @@ services:
       - ./ai_backend:/app
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGO_URI=${MONGO_URI}
 
   mongo:
     image: mongo

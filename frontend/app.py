@@ -64,25 +64,43 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('index.html', username=session['username'])
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/analyze', methods=['GET','POST'])
 def analyze():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    dream_text = request.form.get('dream', '')
-    username = session['username']
+    interpretation = None
+    error = None
+    previous = ""
 
-    if not dream_text.strip():
-        return "Please enter a dream."
+    if request.method == "POST":
+        previous = request.form.get('dream', '').strip()
+        if not previous:
+            error = "Please enter a dream."
+        else:
+            try:
+                res = requests.post(
+                    AI_SERVICE_URL,
+                    json={"dream": previous, "username": session['username']}
+                )
+                data = res.json()
+                interpretation = (
+                    data.get("interpretation")
+                    or data.get("error")
+                    or "No interpretation found."
+                )
+            except Exception as e:
+                error = f"Error: {e}"
 
-    try:
-        res = requests.post("http://ai_backend:6000/interpret", json={"dream": dream_text, "username": username})
-        data = res.json()
-        interpretation = data.get("interpretation", "No interpretation found.")
-    except Exception as e:
-        interpretation = f"Error: {e}"
+    return render_template(
+        'analyze.html',
+        previous=previous,
+        interpretation=interpretation,
+        error=error
+    )
 
-    return render_template('result.html', interpretation=interpretation)
+
+
 
 @app.route('/entries')
 def entries():
