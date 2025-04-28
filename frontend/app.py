@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, session, url_for
 import requests
 from pymongo import MongoClient
@@ -62,7 +63,27 @@ def logout():
 def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session['username'])
+    
+    username = session['username']
+    user = users.find_one({"username": username}) or {}
+    dream_entries = user.get("dreams", [])
+
+    dream_dates = sorted({
+        entry.get("date").date() for entry in dream_entries if "date" in entry
+    }, reverse=True)
+
+    streak = 0
+    today = datetime.utcnow().date()
+
+    for i, day in enumerate(dream_dates):
+        expected_day = today - timedelta(days=i)
+        if day == expected_day:
+            streak += 1
+        else:
+            break
+
+
+    return render_template('index.html', username=username, streak=streak)
 
 @app.route('/analyze', methods=['GET','POST'])
 def analyze():

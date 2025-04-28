@@ -1,6 +1,7 @@
 import os
 import openai
 from pymongo import MongoClient
+from datetime import datetime
 
 mongo_uri = os.getenv("MONGO_URI")
 client = MongoClient(mongo_uri)
@@ -50,7 +51,8 @@ def interpret_dream(username, message):
                     "history": {"$each": new_turns},
                     "dreams": {
                         "text": message,
-                        "analysis": interpretation
+                        "analysis": interpretation,
+                        "date": datetime.utcnow()
                     }
                 }
             }
