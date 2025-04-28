@@ -11,9 +11,9 @@
         {% if dreams %}
             <div class="list-group">
                 {% for dream in dreams %}
-                    <div class="list-group-item mb-3 shadow-lg">
-                        <p class="mb-1"><strong>Date:</strong>
-                            {{ dream.date.strftime('%Y-%m-%d') if dream.date else "Unknown" }}</p>
+                    <div class="list-group-item mb-3 shadow-sm">
+                        <p><strong>Date:</strong> 
+                        {{ dream.date.strftime('%Y-%m-%d') if dream.date else "Unknown" }}</p>
                         <p><strong>Dream:</strong> {{ dream.text }}</p>
                         <p><strong>Analysis:</strong> {{ dream.analysis }}</p>
                     </div>

@@ -4,6 +4,9 @@ import requests
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from ai_backend.chat_functions import get_dream_glance
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
@@ -131,10 +134,16 @@ def entries():
     username = session['username']
     user = users.find_one({"username": username})
     dreams = user.get("dreams", [])
-    dreams = sorted(dreams, key=lambda d: d.get("date", ""), reverse=True)
-
+    dreams = list(reversed(dreams))
     return render_template('entries.html', username=username, dreams=dreams)
 
+@app.route('/dreamstats')
+def dreamstats():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    username = session['username']
+    summary = get_dream_glance(username)
+    return render_template('dreamstats.html', username = username, summary = summary)
 
 @app.route('/export')
 def export():
