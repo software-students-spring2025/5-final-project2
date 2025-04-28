@@ -12,6 +12,7 @@ services:
       - .env
     volumes:
       - ./frontend:/app
+      - ./ai_backend:/app/ai_backend
     environment:
       - MONGO_URI=${MONGO_URI}
 
