@@ -38,16 +38,23 @@ def interpret_dream(username, message):
             messages=messages
         )
         interpretation = response.choices[0].message.content
-        
+
         new_turns = [
             {"role": "user",      "content": message},
             {"role": "assistant", "content": interpretation}
         ]
         users.update_one(
             {"username": username},
-            {"$push": {"history": {"$each": new_turns}}}
+            {
+                "$push": {
+                    "history": {"$each": new_turns},
+                    "dreams": {
+                        "text": message,
+                        "analysis": interpretation
+                    }
+                }
+            }
         )
-        dreams.insert_one({"username": username, "dream": message})
 
         return interpretation
 
