@@ -75,10 +75,8 @@ def analyze():
     if not dream_text.strip():
         return "Please enter a dream."
 
-    dreams.insert_one({"username": username, "text": dream_text})
-
     try:
-        res = requests.post("http://ai_backend:6000/interpret", json={"dream": dream_text})
+        res = requests.post("http://ai_backend:6000/interpret", json={"dream": dream_text, "username": username})
         data = res.json()
         interpretation = data.get("interpretation", "No interpretation found.")
     except Exception as e:

@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import openai
 import os
 
+import chat_functions
+
 app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -9,16 +11,13 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 def interpret():
     data = request.get_json()
     dream = data.get("dream")
+    username = data.get("username")
 
     if not dream:
         return jsonify({"error": "No dream provided"}), 400
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": f"What does this dream mean? {dream}"}]
-        )
-        interpretation = response.choices[0].message['content']
+        interpretation = chat_functions.interpret_dream(username, dream)
         return jsonify({"interpretation": interpretation})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
