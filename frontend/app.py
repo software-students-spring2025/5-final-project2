@@ -129,9 +129,11 @@ def entries():
         return redirect(url_for('login'))
 
     username = session['username']
-    user_dreams = dreams.find({"username": username})
+    user = users.find_one({"username": username})
+    dreams = user.get("dreams", [])
+    dreams = sorted(dreams, key=lambda d: d.get("date", ""), reverse=True)
 
-    return render_template('entries.html', dreams=user_dreams, username=username)
+    return render_template('entries.html', username=username, dreams=dreams)
 
 
 @app.route('/export')
