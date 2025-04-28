@@ -41,6 +41,14 @@ jobs:
             echo "Code coverage is below 80%. Current coverage: $coverage_percentage%"
             exit 1
           fi
+      - name: Run tests with coverage
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+
+        run: |
+          cd ai_backend
+          pytest --cov=. --cov-report=xml
 
   build_and_deploy:
     needs: test
