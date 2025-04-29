@@ -20,7 +20,7 @@ def mock_chat_functions(mocker):
 
 
 def test_interpret_success(client, mock_chat_functions):
-    """Test interpret endpoint"""
+    """Test the interpret endpoint"""
     response = client.post(
         "/interpret",
         json={"username": "test_user", "dream": "I had a strange dream."},
@@ -33,7 +33,7 @@ def test_interpret_success(client, mock_chat_functions):
 
 
 def test_interpret_no_dream(client):
-    """Test interpret endpoint with missing input"""
+    """Test the interpret endpoint with missing input"""
     response = client.post("/interpret", json={"username": "test_user"})
     assert response.status_code == 400
     assert response.json == {"error": "No dream provided"}
