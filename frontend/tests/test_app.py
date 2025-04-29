@@ -119,7 +119,7 @@ def test_dreamstats_uses_helper(client, monkeypatch):
     with client.session_transaction() as sess:
         sess["username"] = "alice"
 
-    monkeypatch.setattr("ai_backend.chat_functions.get_dream_glance", lambda u: {"count": 3})
+    monkeypatch.setattr("ai_backend.chat_functions.get_dream_glance", lambda u: {"count": 3}) 
 
     resp = client.get("/dreamstats")
     assert resp.status_code == 200
