@@ -13,7 +13,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def interpret_dream(username, message):
-    """Interpret user's dream using new message input and past chat interacitons"""
     import traceback
 
     try:
@@ -69,7 +68,6 @@ def interpret_dream(username, message):
 
 
 def get_dream_glance(username):
-    """Get overview of user's dream history and progression"""
     import traceback
 
     try:
