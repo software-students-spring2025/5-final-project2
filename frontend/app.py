@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, send_file
 import requests
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,6 +7,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from ai_backend.chat_functions import get_dream_glance
+from fpdf import FPDF
+import io
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
@@ -147,7 +149,50 @@ def dreamstats():
 
 @app.route('/export')
 def export():
-    return 0
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    username = session['username']
+    user = users.find_one({"username": username}) or {}
+    dreams = user.get("dreams", [])
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font("Times", size=12)
+    pdf.cell(0, 10, f"Dream Journal for {username}", ln=True, align="C")
+    pdf.ln(10)
+
+    if not dreams:
+        pdf.cell(0, 10, "No Dreams Logged.", ln=True)
+    else:
+        for idx, dream in enumerate(dreams, 1):
+            pdf.set_font("Times", "B", 12)
+
+            date_value = dream.get("date")
+            if isinstance(date_value, datetime):
+                date_str = date_value.strftime("%B %d, %Y")
+            else:
+                date_str = "Unknown Date"
+
+            pdf.cell(0, 10, f"Dream #{idx} - {date_str}", ln=True)
+            pdf.set_font("Times", "", 12)
+            pdf.multi_cell(0, 10, f"Dream: {dream.get('text', 'No dream text')}")
+            pdf.multi_cell(0, 10, f"Interpretation: {dream.get('analysis', 'No interpretation')}")
+            pdf.ln(5)
+
+    pdf_output = io.BytesIO()
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    pdf_output.write(pdf_bytes)
+    pdf_output.seek(0)
+
+    return send_file(
+        pdf_output,
+        mimetype='application/pdf',
+        download_name=f"{username}_dream_journal.pdf",
+        as_attachment=True
+    )
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)  
