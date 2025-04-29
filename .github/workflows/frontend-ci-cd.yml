@@ -29,10 +29,13 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov
           
-      - name: Run tests with coverage
-        run: |
-          cd frontend
-          pytest --cov=frontend.app --cov-report=xml
+      - name: Run frontend tests with coverage
+          env:
+            MONGO_URI: "mongodb://localhost:27017"
+            DB_NAME: "test_db"
+          run: |
+            cd frontend
+            pytest --cov=frontend.app --cov-report=xml
 
           
       - name: Check coverage threshold
