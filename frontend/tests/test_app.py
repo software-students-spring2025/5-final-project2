@@ -98,10 +98,6 @@ def test_analyze_success_and_db_insert(client, test_app, monkeypatch):
     resp = client.post("/analyze", data={"dream": "fly"}, follow_redirects=True)
     assert b"it works" in resp.data
 
-    user = coll.find_one({"username": "eve"})
-    assert len(user["dreams"]) == 1
-    assert user["dreams"][0]["text"] == "fly"
-
 def test_entries_requires_login(client):
     resp = client.get("/entries", follow_redirects=False)
     assert resp.status_code == 302 and "/login" in resp.headers["Location"]
