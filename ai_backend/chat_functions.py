@@ -20,14 +20,18 @@ def interpret_dream(username, dream_text):
             "role": "system",
             "content": (
                 "You are a dream interpreter with deep knowledge of astrology, symbolism, "
-                "and human psychology. Provide a concise, actionable interpretation of the user's dream."
+                "and human psychology. Provide a concise, actionable interpretation of the user's dream. "
+                "If the user has previously told you about their dreams, feel free to reference any dreams "
+                "that you think may relate to the most recent one and expalin how they are connected. "
             ),
         }
 
-        messages = [
-            system_prompt,
-            {"role": "user", "content": dream_text}
-        ]
+        user = users.find_one({"username": username}) or {}
+        dreams = user.get("dreams", [])
+
+        prev_dreams = [{"role": "user", "content": dream.get("text", "")} for dream in dreams]
+
+        messages = [system_prompt] + prev_dreams + [{"role": "user", "content": dream_text}]
 
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -56,6 +60,7 @@ def interpret_dream(username, dream_text):
     except Exception as e:
         print("Error interpreting dream:", e)
         return "Could not interpret dream."
+    
 def get_dream_glance(dreams):
     if not dreams:
         return "No dream data available."

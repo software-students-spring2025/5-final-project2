@@ -45,15 +45,31 @@ def test_interpret_exception(client, mock_chat_functions):
     assert response.json == {"error": "Mock error"}
 
 
-def test_glance_success(client, mock_chat_functions):
-    response = client.post("/glance", json={"username": "test_user"})
+def test_dream_glance_success(client, mock_chat_functions):
+    mock_user_data = {
+        "username": "test_user",
+        "dreams": [
+            {"text": "Dream 1", "analysis": "Analysis 1"},
+            {"text": "Dream 2", "analysis": "Analysis 2"},
+        ],
+    }
+    mock_chat_functions.users.find_one.return_value = mock_user_data
+
+    response = client.get("/dream_glance", query_string={"username": "test_user"})
     assert response.status_code == 200
-    assert response.json == {"dream_glance": "This is a mock dream glance."}
-    mock_chat_functions.get_dream_glance.assert_called_once_with("test_user")
 
 
-def test_glance_exception(client, mock_chat_functions):
-    mock_chat_functions.get_dream_glance.side_effect = Exception("Mock error")
-    response = client.post("/glance", json={"username": "test_user"})
-    assert response.status_code == 500
-    assert response.json == {"error": "Mock error"}
+def test_dream_glance_no_username(client):
+    """Test the /dream_glance endpoint with no username provided."""
+    response = client.get("/dream_glance")
+    assert response.status_code == 400
+    assert response.json == {"summary": "No username provided."}
+
+
+def test_dream_glance_no_dreams(client, mock_chat_functions):
+    mock_chat_functions.users.find_one.return_value = {"username": "test_user", "dreams": []}
+
+    response = client.get("/dream_glance", query_string={"username": "test_user"})
+    assert response.status_code == 200
+    assert response.json == {"summary": "No dreams found yet."}
+    mock_chat_functions.get_dream_glance.assert_not_called()
