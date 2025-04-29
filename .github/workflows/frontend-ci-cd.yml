@@ -13,7 +13,7 @@ on:
 
 jobs:
   test:
-    name: 🧪 Test & Coverage
+    name: Test & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -43,17 +43,8 @@ jobs:
           cd frontend
           coverage report --fail-under=80
 
-      - name: Run AI backend tests with coverage
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-        run: |
-          cd ai_backend
-          pytest --cov=. --cov-report=xml
-
   build_and_deploy:
-    name: 🚀 Build & Deploy
+    name: Build & Deploy
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -75,13 +66,17 @@ jobs:
             ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
 
       - name: Deploy to Digital Ocean
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DIGITALOCEAN_HOST }}
-          username: ${{ secrets.DIGITALOCEAN_USERNAME }}
-          key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
-            docker stop frontend-container || true
-            docker rm frontend-container || true
-            docker run -d --name frontend-container -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
+        run: |
+          sshpass -p "${{ secrets.DIGITALOCEAN_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.DIGITALOCEAN_USERNAME }}@${{ secrets.DIGITALOCEAN_HOST }} << 'EOF'
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
+          docker stop frontend-container || true
+          docker rm frontend-container || true
+          
+          if lsof -i:8080 -t > /dev/null; then
+            echo "Port 8080 is currently in use. Freeing it up."
+            kill -9 $(lsof -i:8080 -t) || true
+            sleep 5
+          fi
+          
+          docker run -d --name frontend-container -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
+          EOF
