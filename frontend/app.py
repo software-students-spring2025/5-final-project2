@@ -6,7 +6,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from ai_backend.chat_functions import get_dream_glance
 from fpdf import FPDF
 import io
 
@@ -19,7 +18,12 @@ db = client["mydatabase"]
 users = db["users"]
 dreams = db["dreams"]
 
-AI_SERVICE_URL = "http://ai_backend:6000/interpret"
+AI_SERVICE_BASE = os.getenv("AI_SERVICE_BASE")
+
+INTERPRET_URL = f"{AI_SERVICE_BASE}/interpret"
+GLANCE_URL = f"{AI_SERVICE_BASE}/dream_glance"
+
+
 
 @app.route('/')
 def home():
@@ -28,7 +32,7 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip().lower()
         password = request.form['password']
         password2 = request.form["password2"]
         
@@ -47,7 +51,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip().lower()
         password = request.form['password']
 
         user = users.find_one({"username": username})
@@ -69,7 +73,7 @@ def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    username = session['username']
+    username = session['username'].lower()
     user = users.find_one({"username": username}) or {}
     dream_entries = user.get("dreams", [])
 
@@ -106,8 +110,8 @@ def analyze():
         else:
             try:
                 res = requests.post(
-                    AI_SERVICE_URL,
-                    json={"dream": previous, "username": session['username']}
+                    INTERPRET_URL,
+                    json={"dream": previous, "username": session['username'].lower()}
                 )
                 data = res.json()
                 interpretation = (
@@ -115,6 +119,17 @@ def analyze():
                     or data.get("error")
                     or "No interpretation found."
                 )
+                users.update_one(
+                    {"username": session["username"]},
+                    {"$push": {
+                        "dreams": {
+                            "date": datetime.utcnow(),
+                            "text": previous,
+                            "analysis": interpretation
+                        }
+                    }}
+                )
+
             except Exception as e:
                 error = f"Error: {e}"
 
@@ -133,7 +148,7 @@ def entries():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    username = session['username']
+    username = session['username'].lower()
     user = users.find_one({"username": username})
     dreams = user.get("dreams", [])
     dreams = list(reversed(dreams))
@@ -143,16 +158,23 @@ def entries():
 def dreamstats():
     if 'username' not in session:
         return redirect(url_for('login'))
-    username = session['username']
-    summary = get_dream_glance(username)
-    return render_template('dreamstats.html', username = username, summary = summary)
+    
+    username = session['username'].lower()
+    try:
+        response = requests.get(GLANCE_URL, params={"username": username})
+        data = response.json()
+        summary = data.get("summary", "No insights available.")
+    except Exception as e:
+        summary = f"Error fetching dream insights: {e}"
+
+    return render_template('dreamstats.html', username=username, summary=summary)
 
 @app.route('/export')
 def export():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    username = session['username']
+    username = session['username'].lower()
     user = users.find_one({"username": username}) or {}
     dreams = user.get("dreams", [])
 

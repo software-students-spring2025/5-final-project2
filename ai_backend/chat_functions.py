@@ -1,103 +1,95 @@
-import os
 import openai
+import os
 from pymongo import MongoClient
 from datetime import datetime
 
 mongo_uri = os.getenv("MONGO_URI")
+db_name = os.getenv("DB_NAME")
+
 client = MongoClient(mongo_uri)
-db = client["mydatabase"]
-dreams = db["dreams"]
+db = client[db_name]
 users = db["users"]
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-
-def interpret_dream(username, message):
-    import traceback
-
-    try:
-        user = users.find_one({"username": username}) or {}
-        history = user.get("history", [])
-    except Exception as e:
-        print("MongoDB error loading history:", e)
-        traceback.print_exc()
-        history = []
-
-    system_prompt = {
-        "role": "system",
-        "content": (
-            "You are a dream interpreter with deep knowledge of astrology, symbolism, "
-            "and human psychology. Each time the user submits a dream, you should "
-            "provide a concise, actionable interpretation of that dream. Feel free to use the user's "
-            "previous dreams to interpret the new one. "
-        ),
-    }
-
-    messages = [system_prompt] + history + [{"role": "user", "content": message}]
+def interpret_dream(username, dream_text):
+    username = username.strip().lower()
 
     try:
+        system_prompt = {
+            "role": "system",
+            "content": (
+                "You are a dream interpreter with deep knowledge of astrology, symbolism, "
+                "and human psychology. Provide a concise, actionable interpretation of the user's dream."
+            ),
+        }
+
+        messages = [
+            system_prompt,
+            {"role": "user", "content": dream_text}
+        ]
+
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo", messages=messages
+            model="gpt-3.5-turbo",
+            messages=messages
         )
+
         interpretation = response.choices[0].message.content
 
-        new_turns = [
-            {"role": "user", "content": message},
-            {"role": "assistant", "content": interpretation},
-        ]
-        users.update_one(
+        update_result = users.update_one(
             {"username": username},
             {
                 "$push": {
-                    "history": {"$each": new_turns},
                     "dreams": {
-                        "text": message,
+                        "text": dream_text,
                         "analysis": interpretation,
-                        "date": datetime.utcnow(),
-                    },
+                        "date": datetime.utcnow()
+                    }
                 }
-            },
+            }
         )
+
+        print(f"Update result for {username}: matched={update_result.matched_count}, modified={update_result.modified_count}")
 
         return interpretation
 
     except Exception as e:
-        print("OpenAI API failed:", e)
-        traceback.print_exc()
-        return str(e)
+        print("Error interpreting dream:", e)
+        return "Could not interpret dream."
+def get_dream_glance(dreams):
+    if not dreams:
+        return "No dream data available."
 
+    analyses = sorted(
+        [d.get("analysis", "") for d in dreams if d.get("analysis")],
+        key=lambda x: x.lower() != "",  
+        reverse=True
+    )
 
-def get_dream_glance(username):
-    import traceback
+    if not analyses:
+        return "No dream insights found."
 
-    try:
-        user = users.find_one({"username": username}) or {}
-        history = user.get("history", [])
-    except Exception as e:
-        print("MongoDB error loading history:", e)
-        traceback.print_exc()
-        history = []
+    dream_summary_input = "\n\n".join(analyses[-3:])
 
     system_prompt = {
         "role": "system",
         "content": (
-            "You are a dream interpreter with deep knowledge of astrology, symbolism, "
-            "and human psychology. Using all of the dreams available in your conversation with the user, give a summary of "
-            "the recurring symbols and feelings in their dreams and give some guidance regarding what it could mean in the life. "
-            "Prioritize more recent dreams in your analysis and if there has been a dramatic shift in dream patterns over time, "
-            "acknowledge that and note the user's growth or change. "
+            "You are a dream analyst. Summarize the recurring themes, emotions, and meanings "
+            "across the following dream interpretations. Offer helpful insight and advice."
         ),
     }
 
+    messages = [
+        system_prompt,
+        {"role": "user", "content": dream_summary_input}
+    ]
+
     try:
         response = openai.chat.completions.create(
-            model="gpt-3.5-turbo", messages=[system_prompt] + history
+            model="gpt-3.5-turbo",
+            messages=messages
         )
-        interpretation = response.choices[0].message.content
-
-        return interpretation
-
+        return response.choices[0].message.content
     except Exception as e:
-        print("OpenAI API failed:", e)
-        traceback.print_exc()
-        return str(e)
+        print("OpenAI API error:", e)
+        return "Could not generate dream summary."
