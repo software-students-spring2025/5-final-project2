@@ -75,6 +75,7 @@ jobs:
           if lsof -i:8080 -t > /dev/null; then
             echo "Port 8080 is currently in use. Freeing it up."
             kill -9 $(lsof -i:8080 -t) || true
+            sleep 5
           fi
           
           docker run -d --name frontend-container -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
