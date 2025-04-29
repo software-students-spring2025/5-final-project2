@@ -68,8 +68,14 @@ jobs:
       - name: Deploy to Digital Ocean
         run: |
           sshpass -p "${{ secrets.DIGITALOCEAN_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.DIGITALOCEAN_USERNAME }}@${{ secrets.DIGITALOCEAN_HOST }} << 'EOF'
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
-            docker stop frontend-container || true
-            docker rm frontend-container || true
-            docker run -d --name frontend-container -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
+          docker stop frontend-container || true
+          docker rm frontend-container || true
+          
+          if lsof -i:8080 -t > /dev/null; then
+            echo "Port 8080 is currently in use. Freeing it up."
+            kill -9 $(lsof -i:8080 -t) || true
+          fi
+          
+          docker run -d --name frontend-container -p 8080:8080 ${{ secrets.DOCKER_HUB_USERNAME }}/project-frontend:latest
           EOF
