@@ -23,7 +23,7 @@ def mock_openai(mocker):
 
 
 def test_interpret_dream(mock_mongo, mock_openai):
-    """Test the interpret_dream function."""
+    """Test the interpret_dream function"""
     mock_mongo.find_one.return_value = {
         "username": "test_user",
         "history": [{"role": "user", "content": "Previous dream"}],
@@ -36,7 +36,7 @@ def test_interpret_dream(mock_mongo, mock_openai):
 
 
 def test_interpret_dream_no_history(mock_mongo, mock_openai):
-    """Test interpret_dream when the user has no history."""
+    """Test interpret_dream when the user has no history"""
     mock_mongo.find_one.return_value = None
 
     result = interpret_dream("new_user", "This is a new dream.")
@@ -46,7 +46,7 @@ def test_interpret_dream_no_history(mock_mongo, mock_openai):
 
 
 def test_get_dream_glance(mock_mongo, mock_openai):
-    """Test the get_dream_glance function."""
+    """Test the get_dream_glance function"""
     mock_mongo.find_one.return_value = {
         "username": "test_user",
         "history": [{"role": "user", "content": "Previous dream"}],
