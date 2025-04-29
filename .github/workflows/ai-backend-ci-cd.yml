@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    name: 🧪 Test & Coverage
+    name: Test & Coverage
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -49,7 +49,7 @@ jobs:
           fi
 
   build_and_deploy:
-    name: 🚀 Build & Deploy
+    name: Build & Deploy
     needs: test
     runs-on: ubuntu-latest
     steps:

@@ -32,7 +32,8 @@ jobs:
       - name: Run tests with coverage
         run: |
           cd frontend
-          pytest --cov=. --cov-report=xml
+          pytest --cov=frontend.app --cov-report=xml
+
           
       - name: Check coverage threshold
         run: |
