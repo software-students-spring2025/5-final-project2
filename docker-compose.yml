@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   frontend:
-    build: ./frontend
+    image: andrewjung03/dreamjournal-frontend:latest
     ports:
       - "8080:5000"
     depends_on:
@@ -10,21 +10,19 @@ services:
       - mongo
     env_file:
       - .env
-    volumes:
-      - ./frontend:/app
-      - ./ai_backend:/app/ai_backend
     environment:
       - MONGO_URI=${MONGO_URI}
+      - AI_SERVICE_BASE=http://ai_backend:6000
+      - DB_NAME=${DB_NAME}
 
   ai_backend:
-    build: ./ai_backend
+    image: andrewjung03/dreamjournal-ai_backend:latest
     ports:
       - "6000:6000"
-    volumes:
-      - ./ai_backend:/app
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - MONGO_URI=${MONGO_URI}
+      - DB_NAME=${DB_NAME}  
 
   mongo:
     image: mongo
