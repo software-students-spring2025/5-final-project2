@@ -121,16 +121,6 @@ def analyze():
                     or data.get("error")
                     or "No interpretation found."
                 )
-                users.update_one(
-                    {"username": session["username"]},
-                    {"$push": {
-                        "dreams": {
-                            "date": datetime.utcnow(),
-                            "text": previous,
-                            "analysis": interpretation
-                        }
-                    }}
-                )
 
             except Exception as e:
                 error = f"Error: {e}"
