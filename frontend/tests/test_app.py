@@ -23,8 +23,7 @@ def test_app():
     builtins.__import__ = fake_import
     mod = importlib.import_module("frontend.app")  
     flask_app = mod.app
-    flask_app.users = mod.users
-    flask_app.dreams = mod.dreams                             
+    flask_app.users = mod.users                          
     builtins.__import__ = real_import
 
     flask_app.config["TESTING"] = True
