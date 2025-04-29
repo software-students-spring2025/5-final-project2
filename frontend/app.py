@@ -8,15 +8,17 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from fpdf import FPDF
 import io
+from ai_backend.chat_functions import get_dream_glance
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret")
 
 mongo_uri = os.getenv("MONGO_URI")
 client = MongoClient(mongo_uri)
-db = client["mydatabase"]
+db_name = os.getenv("DB_NAME", "mydatabase")
+db = client[db_name]
 users = db["users"]
-dreams = db["dreams"]
 
 AI_SERVICE_BASE = os.getenv("AI_SERVICE_BASE")
 

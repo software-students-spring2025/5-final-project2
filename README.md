@@ -4,6 +4,7 @@
 
 # Description
 The Dream Journal Web App is a full-stack platform that allows users to register, log in, and record their dreams securely. After submitting a dream, users receive an AI-generated interpretation powered by an OpenAI backend. Dreams are stored in a personal journal using MongoDB, letting users view, export as a pdf, and reflect on their dream entries over time. Built with Python/Flask, HTML/CSS, and Docker, the app emphasizes user authentication, secure data handling, and creative self-exploration.
+[Link to Deployed App](http://161.35.189.175:8080/)
 
 # Team
 * [Josh Lavroff](https://github.com/joshlavroff)
