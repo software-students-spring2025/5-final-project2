@@ -2,3 +2,4 @@ Flask==3.1.0
 Flask-Login==0.6.3
 Flask-PyMongo==3.0.1
 openai==1.72.0
+pytest-mock==3.14.0
