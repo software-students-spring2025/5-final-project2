@@ -70,13 +70,14 @@ jobs:
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
 
       - name: Deploy to Digital Ocean
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DIGITALOCEAN_HOST }}
-          username: ${{ secrets.DIGITALOCEAN_USERNAME }}
-          key: ${{ secrets.DIGITALOCEAN_SSH_KEY }}
-          script: |
+        run: |
+          sshpass -p "${{ secrets.DIGITALOCEAN_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.DIGITALOCEAN_USERNAME }}@${{ secrets.DIGITALOCEAN_HOST }} << 'EOF'
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest
             docker stop ai-backend-container || true
             docker rm ai-backend-container || true
-            docker run -d --name ai-backend-container -p 5000:5000 -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest
+            docker run -d --name ai-backend-container -p 5000:5000 \
+              -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+              -e MONGO_URI="${{ secrets.MONGO_URI }}" \
+              -e DB_NAME="${{ secrets.DB_NAME }}" \
+              ${{ secrets.DOCKER_HUB_USERNAME }}/project-ai-backend:latest
+          EOF

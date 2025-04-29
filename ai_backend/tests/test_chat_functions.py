@@ -41,7 +41,7 @@ def test_interpret_dream_no_history(mock_mongo, mock_openai):
     mock_openai.chat.completions.create.assert_called_once()
 
 
-def test_get_dream_glance(mock_mongo, mock_openai):
+def test_get_dream_glance(mock_openai):
     dreams = [{"text": "Previous dream", "analysis": "Previous dream analysis"}]
 
     result = get_dream_glance(dreams)
