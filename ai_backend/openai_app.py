@@ -17,6 +17,7 @@ def interpret():
     data = request.get_json()
     dream = data.get("dream")
     username = data.get("username", "").strip().lower()
+    print("INTERPRET endpoint hit with:", data)
 
     if not dream:
         return jsonify({"error": "No dream provided"}), 400
