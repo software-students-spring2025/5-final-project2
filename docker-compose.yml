@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   frontend:
-    image: andrewjung03/dreamjournal-frontend:latest
+    build:
+      context: ./frontend  
     ports:
       - "8080:5000"
     depends_on:
@@ -16,7 +17,8 @@ services:
       - DB_NAME=${DB_NAME}
 
   ai_backend:
-    image: andrewjung03/dreamjournal-ai_backend:latest
+    build:
+      context: ./ai_backend 
     ports:
       - "6000:6000"
     environment:

@@ -17,14 +17,15 @@
 
         {% if dreams %}
             <div class="list-group">
-                {% for dream in dreams %}
+                {% for i in range(0, dreams|length, 2) %}
+                {% set dream = dreams[i] %}
                     <div class="list-group-item mb-3 shadow-sm">
                         <p><strong>Date:</strong> 
                         {{ dream.date.strftime('%Y-%m-%d') if dream.date else "Unknown" }}</p>
                         <p><strong>Dream:</strong> {{ dream.text }}</p>
                         <p><strong>Analysis:</strong> {{ dream.analysis }}</p>
                     </div>
-                {% endfor %}
+                {% endfor %}            
             </div>
         {% else %}
             <p class="text-muted text-center">No dreams recorded yet.</p>
