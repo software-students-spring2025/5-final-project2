@@ -179,7 +179,7 @@ def export():
     if not dreams:
         pdf.cell(0, 10, "No Dreams Logged.", ln=True)
     else:
-        for idx, dream in enumerate(dreams, 1):
+        for idx, dream in enumerate(dreams[::2], 1):
             pdf.set_font("Times", "B", 12)
 
             date_value = dream.get("date")
